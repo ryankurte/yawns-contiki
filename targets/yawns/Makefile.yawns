@@ -9,9 +9,11 @@ endif
 CONTIKI_TARGET_DIRS = . dev
 CONTIKI_TARGET_MAIN = ${addprefix $(OBJECTDIR)/,contiki-main.o}
 
-CONTIKI_TARGET_SOURCEFILES = contiki-main.c clock.c leds.c leds-arch.c cfs-posix.c cfs-posix-dir.c dlloader.c
+CONTIKI_TARGET_SOURCEFILES = contiki-main.c clock.c leds.c leds-arch.c \
+                button-sensor.c pir-sensor.c vib-sensor.c xmem.c \
+                sensors.c irq.c cfs-posix.c cfs-posix-dir.c
 
-CONTIKI_TARGET_SOURCEFILES += tapdev-drv.c tapdev.c tapdev6.c linuxradio-drv.c
+#CONTIKI_TARGET_SOURCEFILES += tapdev-drv.c tapdev6.c
 
 CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES)
 
@@ -23,4 +25,4 @@ include $(CONTIKI)/cpu/native/Makefile.native
 
 TARGET_LIBFILES += -lncurses -lowns -lzmq -lczmq -lprotobuf -lprotobuf-c -lpthread
 
-MODULES += core/net core/net/mac core/net/rime core/ctk core/net/llsec core/net/ip64-addr/
+MODULES+=core/net core/net/mac core/net/llsec core/net/ip64-addr/ core/net/ip core/net/ipv6

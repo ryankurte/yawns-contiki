@@ -1,17 +1,19 @@
-CONTIKI_PROJECT = hello-world
+CONTIKI_PROJECT = test
 all: $(CONTIKI_PROJECT)
 
-CONTIKI = ../contiki
+CONTIKI = ./contiki
 
 TARGETDIRS += targets
+TARGET=yawns
+
 PROJECT_SOURCEFILES += yawns-radio.c
 
-TARGET=yawns-net
 #APP=shell
 
-DEFINES += NETSTACK_CONF_WITH_IPV6 UIP_CONF_IPV6_RPL RPL_BORDER_ROUTER
-
-TARGET_LIBFILES += -lncurses -lowns -lzmq -lczmq -lprotobuf -lprotobuf-c -lpthread
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\" -DNETSTACK_CONF_RADIO=yawns_driver
+CFLAGS += -DUIP_CONF_IPV6_RPL=1 -DNETSTACK_CONF_WITH_IPV6=1
+#CFLAGS += -DDEBUG=DEBUG_FULL
+CFLAGS += -DRPL_BORDER_ROUTER=1
 
 include $(CONTIKI)/Makefile.include
 

@@ -83,14 +83,13 @@ static int select_max = 0;
 
 SENSORS(&pir_sensor, &vib_sensor, &button_sensor);
 
-static uint8_t serial_id[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
+static uint8_t serial_id[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};
 #if !NETSTACK_CONF_WITH_IPV6
 static uint16_t node_id = 0x0102;
 #endif /* !NETSTACK_CONF_WITH_IPV6 */
-
 /*---------------------------------------------------------------------------*/
-int select_set_callback(int fd, const struct select_callback *callback)
+int
+select_set_callback(int fd, const struct select_callback *callback)
 {
   int i;
   if(fd >= 0 && fd < SELECT_MAX) {
@@ -121,12 +120,14 @@ int select_set_callback(int fd, const struct select_callback *callback)
   return 0;
 }
 /*---------------------------------------------------------------------------*/
-static int stdin_set_fd(fd_set *rset, fd_set *wset)
+static int
+stdin_set_fd(fd_set *rset, fd_set *wset)
 {
   FD_SET(STDIN_FILENO, rset);
   return 1;
 }
-static void stdin_handle_fd(fd_set *rset, fd_set *wset)
+static void
+stdin_handle_fd(fd_set *rset, fd_set *wset)
 {
   char c;
   if(FD_ISSET(STDIN_FILENO, rset)) {
@@ -139,7 +140,8 @@ const static struct select_callback stdin_fd = {
   stdin_set_fd, stdin_handle_fd
 };
 /*---------------------------------------------------------------------------*/
-static void set_rime_addr(void)
+static void
+set_rime_addr(void)
 {
   linkaddr_t addr;
   int i;
@@ -170,7 +172,8 @@ static void set_rime_addr(void)
 int contiki_argc = 0;
 char **contiki_argv;
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 #if NETSTACK_CONF_WITH_IPV6
 #if UIP_CONF_IPV6_RPL
@@ -212,24 +215,17 @@ int main(int argc, char **argv)
   ctimer_init();
   rtimer_init();
 
-#if WITH_GUI
-  process_start(&ctk_process, NULL);
-#endif
-
   set_rime_addr();
 
   netstack_init();
   printf("MAC %s RDC %s NETWORK %s\n", NETSTACK_MAC.name, NETSTACK_RDC.name, NETSTACK_NETWORK.name);
 
-#if NETSTACK_CONF_WITH_IPV6
   queuebuf_init();
 
   memcpy(&uip_lladdr.addr, serial_id, sizeof(uip_lladdr.addr));
 
   process_start(&tcpip_process, NULL);
-#ifdef __CYGWIN__
-  process_start(&wpcap_process, NULL);
-#endif
+
   printf("Tentative link-local IPv6 address ");
   {
     uip_ds6_addr_t *lladdr;
@@ -244,11 +240,8 @@ int main(int argc, char **argv)
 
     printf("%02x%02x\n", lladdr->ipaddr.u8[14], lladdr->ipaddr.u8[15]);
   }
-#elif NETSTACK_CONF_WITH_IPV4
-  process_start(&tcpip_process, NULL);
-#endif
 
-  serial_line_init();
+  //serial_line_init();
 
   autostart_start(autostart_processes);
 
@@ -294,22 +287,19 @@ int main(int argc, char **argv)
 
     etimer_request_poll();
 
-#if WITH_GUI
-    if(console_resize()) {
-       ctk_restore();
-    }
-#endif /* WITH_GUI */
   }
 
   return 0;
 }
 /*---------------------------------------------------------------------------*/
-void log_message(char *m1, char *m2)
+void
+log_message(char *m1, char *m2)
 {
   fprintf(stderr, "%s%s\n", m1, m2);
 }
 /*---------------------------------------------------------------------------*/
-void uip_log(char *m)
+void
+uip_log(char *m)
 {
   fprintf(stderr, "%s\n", m);
 }

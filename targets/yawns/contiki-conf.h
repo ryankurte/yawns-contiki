@@ -56,118 +56,179 @@ int select_set_callback(int fd, const struct select_callback *callback);
 #define CCIF
 #define CLIF
 
-#define NETSTACK_CONF_RADIO   yawns_driver
+/* These names are deprecated, use C99 names. */
+typedef uint8_t   u8_t;
+typedef uint16_t u16_t;
+typedef uint32_t u32_t;
+typedef  int32_t s32_t;
 
 typedef unsigned short uip_stats_t;
 
+#define UIP_CONF_UDP             1
+#define UIP_CONF_MAX_CONNECTIONS 40
+#define UIP_CONF_MAX_LISTENPORTS 40
+#define UIP_CONF_BUFFER_SIZE     420
+#define UIP_CONF_BYTE_ORDER      UIP_LITTLE_ENDIAN
+#define UIP_CONF_TCP       1
+#define UIP_CONF_TCP_SPLIT       0
+#define UIP_CONF_LOGGING         0
+#define UIP_CONF_UDP_CHECKSUMS   1
+
+#ifndef NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 8
+#endif /* NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE */
+
 #if NETSTACK_CONF_WITH_IPV6
-/* Minimal-net gets a 6 byte ethernet MAC assigned in uip.c, currently {0x00,0x06,0x98,0x00,0x02,0x32}
- * This gets converted to a link layer address of [fe80::206:98ff:fe00:232]
- * You could change the uip.c address when running multiple instances, however HARD_CODED_ADDRESS
- * can also specify a different MAC address if any of the last three bytes are non-zero. It can also
- * specify a prefix if any of the first four longs are nonzero. RPL builds use this to pass a prefix
- * to the border router and also to ensure it has a different link-layer address from the RPL end node.
- * HARD_CODED_ADDRESS can also be changed in /platform/minimal-net/contiki-main.c so as not to force complete
- * rebuilds when making multiple instances of a minimal-net client.
-*/
-//#define HARD_CODED_ADDRESS      "::10" //assign link-layer address fe80::ff:fe00:10, wait for RA or RPL prefix
-//#define HARD_CODED_ADDRESS      "fdfd::" //assign prefix; address becomes fdfd::206:98ff:fe00:232
-//#define HARD_CODED_ADDRESS      "fdfd::10" //assign prefix and ipv6 address fdfd::ff:fe00:10
 
-/* The status.shtml page shows addresses, neighbors, and routes on ipv6 builds. Use this define to enable
- * the needed routines in httpd-cgi.c on the webserver6 build. The status page is present in
- * /apps/webserver/httpd-fs/ but not in the default /apps/webserver/httpd-fsdata.c file.
- * To include it run the PERL script /../../tools/makefsdata from the /apps/webserver/ directory.
- * NB: Webserver builds on all platforms will use the current httpd-fsdata.c file. The added 160 bytes
- * could overflow memory on the smaller platforms.
- */
-#define WEBSERVER_CONF_STATUSPAGE   1
+#define LINKADDR_CONF_SIZE              8
 
-/* RPL currently works only on Windows. *nix would require converting the tun interface to two pcap tees. */
-//#define RPL_BORDER_ROUTER           0
-#endif
+#ifndef NETSTACK_CONF_MAC
+#define NETSTACK_CONF_MAC     nullmac_driver
+#endif /* NETSTACK_CONF_MAC */
 
-#if UIP_CONF_IPV6_RPL
-/* RPL motes use the uip.c link layer address or optionally the harded coded address (but without the prefix!)
- * Different instances can be made by changing the link layer portion of HARD_CODED_ADDRESS in contiki-main.c
- * Rename them to e.g. webserver6.10, webserver6.11, ...
- * They should all attach to a minimal-net rpl border that uses the same primary interface.
- * For multihop testing, configure intermediate notes as routers.
- */
-#define HARD_CODED_ADDRESS      "bbbb::10"  //the prefix is ignored for a rpl node
-#define UIP_CONF_ROUTER                 0
-#define UIP_CONF_ND6_SEND_RA            0
-#define UIP_CONF_ND6_REACHABLE_TIME     600000
-#define UIP_CONF_ND6_RETRANS_TIMER      10000
+#ifndef NETSTACK_CONF_RDC
+#define NETSTACK_CONF_RDC     nullrdc_driver
+#endif /* NETSTACK_CONF_RDC */
 
-#if RPL_BORDER_ROUTER
-/* RPL border router accepts packets from the host through the fallback and directs them to
- * the primary interface. Thus the fallback and rpl dag prefix must be the same. The prefix of
- * the primary interface does not matter!
- * Rename this build to e.g. webrouter. Then on Windows create two loopback interfaces, bbbb:: and fdfd::
- * Attach the RPL end nodes to fdfd:: and the webrouter to fdfd:: with bbbb:: as the fallback.
- * Direct browser to bbbb::ff:fe00:1/status.html, bbbb::ff:fe00:10/status.html, bbbb::ff:fe00:20/status.html.
- * The traffic will go through the bbbb:: interface to the router, then out the fdfd:: interface to the end
- * nodes. The end nodes must be explicitly added as neighbors to avoid a blocking NS
- * netsh interface ipv6 add neighbor bbbb::ff:fe00:10 33-33-ff-33-44-10 interface=16 (# of the bbbb interface)
- * netsh interface ipv6 add neighbor bbbb::ff:fe00:20 33-33-ff-33-44-20 interface=16 (# of the bbbb interface)
- *
- * Instead of using the fdfd:: loopback it is also possible to attach the border router to another interface,
- * e.g. the jackdaw RNDIS <->  repeater. Then RPL will configure on the radio network and the RF motes will
- * be reached through bbbb::<mote link layer address>.
- * Possibly minimal-net RPL motes could also be added to this interface?
- *
- */
-#undef UIP_CONF_ROUTER
-#define UIP_CONF_ROUTER             1
-//#define RPL_CONF_STATS              0
-//#define UIP_CONF_BUFFER_SIZE	 1300
-#undef UIP_FALLBACK_INTERFACE
-#define UIP_FALLBACK_INTERFACE rpl_interface
-//#define WPCAP_FALLBACK_ADDRESS     "bbbb::1"  //bbbb::1 is the default fallback prefix
-#undef HARD_CODED_ADDRESS
-#define HARD_CODED_ADDRESS            "bbbb::1" //bbbb::ff:fe00:1 is the RPL border router default
-//#define UIP_CONF_ND6_SEND_RA		0
-//#define UIP_CONF_ND6_REACHABLE_TIME 600000
-//#define UIP_CONF_ND6_RETRANS_TIMER  10000
-#endif
+#ifndef NETSTACK_CONF_RADIO
+#define NETSTACK_CONF_RADIO   nullradio_driver
+#endif /* NETSTACK_CONF_RADIO */
 
-#endif
+#ifndef NETSTACK_CONF_FRAMER
+#define NETSTACK_CONF_FRAMER  framer_802154
+#endif /* NETSTACK_CONF_FRAMER */
 
-#define UIP_CONF_LLH_LEN              14
-#define UIP_CONF_MAX_LISTENPORTS      40
-#define UIP_CONF_MAX_CONNECTIONS      40
-#define UIP_CONF_BYTE_ORDER           UIP_LITTLE_ENDIAN
-#define UIP_CONF_TCP_SPLIT            0
-#define UIP_CONF_IP_FORWARD           0
-#define UIP_CONF_LOGGING              0
-#define UIP_CONF_UDP_CHECKSUMS        1
-
-/* Not used but avoids compile errors while sicslowpan.c is being developed */
-#define SICSLOWPAN_CONF_COMPRESSION       SICSLOWPAN_COMPRESSION_HC06
+#define NETSTACK_CONF_NETWORK sicslowpan_driver
 
 #define NETSTACK_CONF_LINUXRADIO_DEV "wpan0"
 
-#define UIP_CONF_UDP                  1
-#define UIP_CONF_TCP                  1
+#define UIP_CONF_ROUTER                 1
 
-#if NETSTACK_CONF_WITH_IPV6
-#define UIP_CONF_IPV6_QUEUE_PKT       1
-#define UIP_CONF_IPV6_CHECKS          1
-#define UIP_CONF_IPV6_REASSEMBLY      1
-//#define UIP_CONF_NETIF_MAX_ADDRESSES  5
-#define NBR_TABLE_CONF_MAX_NEIGHBORS     100
-#define UIP_CONF_DS6_DEFRT_NBU   2
-#define UIP_CONF_DS6_PREFIX_NBU  5
-#define UIP_CONF_MAX_ROUTES   100
-#define UIP_CONF_DS6_ADDR_NBU    10
-#define UIP_CONF_DS6_MADDR_NBU   0
-#define UIP_CONF_DS6_AADDR_NBU   0
+#define SICSLOWPAN_CONF_COMPRESSION             SICSLOWPAN_COMPRESSION_HC06
+#ifndef SICSLOWPAN_CONF_FRAG
+#define SICSLOWPAN_CONF_FRAG                    1
+#define SICSLOWPAN_CONF_MAXAGE                  8
+#endif /* SICSLOWPAN_CONF_FRAG */
+#define SICSLOWPAN_CONF_MAX_ADDR_CONTEXTS       2
+
+#define UIP_CONF_IPV6_CHECKS     1
+#define UIP_CONF_IPV6_QUEUE_PKT  1
+#define UIP_CONF_IPV6_REASSEMBLY 0
+#define UIP_CONF_NETIF_MAX_ADDRESSES  3
+#define UIP_CONF_ICMP6           1
+
+/* configure number of neighbors and routes */
+#ifndef NBR_TABLE_CONF_MAX_NEIGHBORS
+#define NBR_TABLE_CONF_MAX_NEIGHBORS     30
+#endif /* NBR_TABLE_CONF_MAX_NEIGHBORS */
+#ifndef UIP_CONF_MAX_ROUTES
+#define UIP_CONF_MAX_ROUTES   30
+#endif /* UIP_CONF_MAX_ROUTES */
+
+#define UIP_CONF_ND6_SEND_RA		0
+#define UIP_CONF_ND6_REACHABLE_TIME     600000
+#define UIP_CONF_ND6_RETRANS_TIMER      10000
+
+#define UIP_CONF_IP_FORWARD             0
+#ifndef UIP_CONF_BUFFER_SIZE
+#define UIP_CONF_BUFFER_SIZE		240
+#endif
+
+
+#define UIP_CONF_LLH_LEN                0
+#define UIP_CONF_LL_802154              1
+
+#define UIP_CONF_ICMP_DEST_UNREACH 1
+
+#define UIP_CONF_DHCP_LIGHT
+#ifndef UIP_CONF_RECEIVE_WINDOW
+#define UIP_CONF_RECEIVE_WINDOW  48
+#endif
+#define UIP_CONF_TCP_MSS         48
+#define UIP_CONF_UDP_CONNS       12
+#define UIP_CONF_FWCACHE_SIZE    30
+#define UIP_CONF_BROADCAST       1
+#define UIP_ARCH_IPCHKSUM        1
+#define UIP_CONF_UDP             1
+#define UIP_CONF_UDP_CHECKSUMS   1
+#define UIP_CONF_PINGADDRCONF    0
+#define UIP_CONF_LOGGING         0
+
+
+
 #endif /* NETSTACK_CONF_WITH_IPV6 */
 
+#include <ctype.h>
+#define ctk_arch_isprint isprint
 
+#include "ctk/ctk-curses.h"
 
-#include "ctk-config.h"
+#define CH_ULCORNER	          -10
+#define CH_URCORNER	          -11
+#define CH_LLCORNER	          -12
+#define CH_LRCORNER	          -13
+#define CH_ENTER	          '\n'
+#define CH_DEL		          '\b'
+#define CH_CURS_UP  	          -1
+#define CH_CURS_LEFT	          -2
+#define CH_CURS_RIGHT	          -3
+#define CH_CURS_DOWN	          -4
+
+#define CTK_CONF_MENU_KEY         -5  /* F10 */
+#define CTK_CONF_WINDOWSWITCH_KEY -6  /* Ctrl-Tab */
+#define CTK_CONF_WIDGETUP_KEY     -7  /* Shift-Tab */
+#define CTK_CONF_WIDGETDOWN_KEY   '\t'
+#define CTK_CONF_WIDGET_FLAGS     0
+#define CTK_CONF_SCREENSAVER      1
+
+#ifdef PLATFORM_BUILD
+#define CTK_CONF_MOUSE_SUPPORT    1
+#define CTK_CONF_WINDOWS          1
+#define CTK_CONF_WINDOWMOVE       1
+#define CTK_CONF_WINDOWCLOSE      1
+#define CTK_CONF_ICONS            1
+#define CTK_CONF_ICON_BITMAPS     0
+#define CTK_CONF_ICON_TEXTMAPS    1
+#define CTK_CONF_MENUS            1
+#define CTK_CONF_MENUWIDTH        16
+#define CTK_CONF_MAXMENUITEMS     10
+#else /* PLATFORM_BUILD */
+#define CTK_CONF_MOUSE_SUPPORT    1
+#define CTK_CONF_WINDOWS          0
+#define CTK_CONF_WINDOWMOVE       0
+#define CTK_CONF_WINDOWCLOSE      0
+#define CTK_CONF_ICONS            0
+#define CTK_CONF_MENUS            0
+#endif /* PLATFORM_BUILD */
+
+/* CTK-specific color constants */
+#define CTK_COLOR_BLACK   0
+#define CTK_COLOR_RED     1
+#define CTK_COLOR_GREEN   2
+#define CTK_COLOR_YELLOW  3
+#define CTK_COLOR_BLUE    4
+#define CTK_COLOR_MAGENTA 5
+#define CTK_COLOR_CYAN    6
+#define CTK_COLOR_WHITE   7
+
+/* base background color for widgets */
+#define COLOR_BG CTK_COLOR_BLUE
+
+#define BORDERCOLOR         CTK_COLOR_BLACK
+#define SCREENCOLOR         CTK_COLOR_BLACK
+#define BACKGROUNDCOLOR     CTK_COLOR_BLACK
+#define WINDOWCOLOR_FOCUS   CTK_COLOR_WHITE  | COLOR_BG * 0x10
+#define WINDOWCOLOR         CTK_COLOR_CYAN   | COLOR_BG * 0x10
+#define DIALOGCOLOR         CTK_COLOR_WHITE  | COLOR_BG * 0x10
+#define WIDGETCOLOR_HLINK   CTK_COLOR_CYAN   | COLOR_BG * 0x10
+#define WIDGETCOLOR_FWIN    CTK_COLOR_WHITE  | COLOR_BG * 0x10
+#define WIDGETCOLOR         CTK_COLOR_CYAN   | COLOR_BG * 0x10
+#define WIDGETCOLOR_DIALOG  CTK_COLOR_WHITE  | COLOR_BG * 0x10
+#define WIDGETCOLOR_FOCUS   CTK_COLOR_YELLOW | COLOR_BG * 0x10
+#define MENUCOLOR           CTK_COLOR_WHITE  | COLOR_BG * 0x10
+#define OPENMENUCOLOR       CTK_COLOR_WHITE  | COLOR_BG * 0x10
+#define ACTIVEMENUITEMCOLOR CTK_COLOR_YELLOW | COLOR_BG * 0x10
+
 
 typedef unsigned long clock_time_t;
 
