@@ -18,6 +18,23 @@ uint32_t channel = 0;
 extern int contiki_argc;
 extern char **contiki_argv;
 
+uint16_t crc16_ccit_kermit(uint32_t len, uint8_t *data)
+{
+    uint16_t crc = 0x0000;
+
+    for (uint32_t i = 0; i < len; i++) {
+        uint8_t d = data[i];
+        uint16_t q;
+
+        q = (crc ^ d) & 0x0f;
+        crc = (crc >> 4) ^ (q * 0x1081);
+        q = (crc ^ (d >> 4)) & 0xf;
+        crc = (crc >> 4) ^ (q * 0x1081);
+    }
+
+    return crc;
+}
+
 /*---------------------------------------------------------------------------*/
 static int yawns_init(void)
 {
@@ -62,7 +79,15 @@ static int yawns_transmit(unsigned short transmit_len)
 /*---------------------------------------------------------------------------*/
 static int yawns_send(const void *payload, unsigned short payload_len)
 {
-    return ONS_radio_send(&radiox, channel, (uint8_t *) payload, payload_len);
+    uint8_t data[payload_len + 2];
+
+    memcpy(data, payload, payload_len);
+
+    uint16_t crc = crc16_ccit_kermit(payload_len, (uint8_t *)payload);
+    data[payload_len + 0] = crc & 0xFF;
+    data[payload_len + 1] = crc >> 8;
+
+    return ONS_radio_send(&radiox, channel, (uint8_t *) data, payload_len + 2);
 }
 /*---------------------------------------------------------------------------*/
 static int yawns_radio_read(void *buf, unsigned short buf_len)
